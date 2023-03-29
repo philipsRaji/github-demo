@@ -14,10 +14,10 @@ jobs:
       - name: Clone supercharge website repository
         uses: actions/checkout@v2
         with:
-          path: newfile.json
           repository: supercharge/docs
+          path: newfile.json
       - name: Access cloned repository content
         run: |
-          cd: newfile.json
+          cd newfile.json
           pwd
           ls -la
