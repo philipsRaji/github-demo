@@ -1,0 +1,23 @@
+name: "Repo clone"
+
+on:
+ push:
+    branches: [ "main" ]
+ pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone supercharge website repository
+        uses: actions/checkout@v2
+        with:
+          repository: supercharge/docs
+          path: newfile.json
+      - name: Access cloned repository content
+        run: |
+          cd newfile.json
+          pwd
+          ls -la
