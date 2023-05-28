@@ -1,1 +1,81 @@
+name: "Blackduck-SBOM report"
 
+on:
+  push:
+    branches: [ "sbom-report-generation" ]
+  
+jobs:
+  blackduck_sbom:
+    runs-on: [self-hosted, linux, x64, philips]
+
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+        with:
+          token: ${{ secrets.XDS_BOT_PAT }}
+          repository: philips-internal/xds-admin
+          ref: 'master'
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+        with: 
+           java-version: '8' 
+           distribution: 'temurin' 
+
+       
+      - name: SBOM report generation
+        uses: philips-software/blackduck-report-action@v0.3
+        id: blackduck-report
+        with:
+          blackduck-url: https://blackduck.philips.com
+          blackduck-token: ${{ secrets.BLACKDUCK_TOKEN }}
+          project: Forcare
+          version: xds-admin
+          sbom-type: json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom-report
+          path: ${{steps.blackduck-report.outputs.sbom-file}}
+
+      - name: unzip file
+        run: |
+          unzip *.zip
+          rm *.zip
+          mv Forcare-xds-admin_SPDX* temp
+          cd temp 
+          mv * ../ 
+          
+      - name: print files in directory
+        run: |
+           mv sbom* report.json
+           ls -la
+           
+      #- name: Read file contents
+       # id: read_file
+       # uses: andstor/file-reader-action@v1
+       # with:
+        #  path: "report.json"
+
+      #- name: json2htmltable
+      #  uses: Siddhant-K-code/JSON-to-Table@v1
+       # with:
+        #  json-file-path: data.json
+
+      #- name: json2table
+       # uses: Enovade/json2html@v0.2.4-beta
+       # with:
+        #   json: ${ steps.read_file.outputs.contents }
+        
+      - name: json2table
+        uses: EddieHubCommunity/gh-actions-html-table-generator@v0.1.1
+        with:
+          json-file-path: 'report.json'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          columns: 10
+          object-field-names: '[ "SPDXID" , "spdxVersion" , "creationInfo" , "name" , "dataLicense ", "hasExtractedLicensingInfos" , "documentNamespace" , "documentDescribes" , "packages" , "relationships" ] '
+          html-cell: '<td> <tr> {{SPDXID}} </tr><tr> {{spdxVersion}} </tr><tr> {{creationInfo}}</tr><tr> {{name}}</tr><tr> {{dataLicense}}</tr><tr>  {{hasExtractedLicensingInfos}}</tr><tr> {{documentNamespace}} </tr><tr>{{documentDescribes}} </tr><tr>{{packages}} </tr><tr>{{relationships}}</tr> </td> '
+          
+
+         
